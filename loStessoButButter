@@ -1,0 +1,70 @@
+import java.io.File;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
+import javax.xml.parsers.DocumentBuilder;
+import org.w3c.dom.Document;
+import org.w3c.dom.NodeList;
+import java.time.*;
+import java.time.format.DateTimeFormatter;
+
+public class DomParser {
+	   
+	public static void main(String[] args) { 
+		   
+	       String dateTimeStringcheck = "";
+		   ZonedDateTime ldl = null;
+	       DateTimeFormatter myF= DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSX");
+
+		   try {
+		    	  
+		        File inputFile = new File("C:\\Users\\Piergiulio\\eclipse-workspace-CorsoJava\\XmlPractice\\src\\NewFile.xml");
+		         
+		        DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+		        DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+		        Document doc = dBuilder.parse(inputFile);
+		        
+		        NodeList edt = doc.getElementsByTagName("cmn:EventDateTime");
+		        
+                for ( int i=0;i<edt.getLength();i++) {		        	
+		        	
+		        	if (dateTimeStringcheck.equals(edt.item(i).getTextContent())==false) {	        		
+				        
+		        		dateTimeStringcheck= edt.item(i).getTextContent();
+				        ldl= ZonedDateTime.parse(dateTimeStringcheck, myF);        		
+		        	
+		        	} else {	
+		        		ldl= ldl.plusSeconds(1);
+		        		edt.item(i).setTextContent(ldl.toString());
+		        	}
+	        	
+	        	System.out.println(i + " : " + edt.item(i).getTextContent());	
+		        	
+		        } 
+                /* inizio piccolo test
+                System.out.println(ldl.plusSeconds(10));
+                System.out.println(ldl.plusSeconds(123));
+                System.out.println(ldl.plusSeconds(1234));
+                System.out.println(ldl.plusSeconds(12345));
+                System.out.println(ldl.plusSeconds(123456));
+                System.out.println(ldl.plusSeconds(1234567));
+                System.out.println(ldl.plusSeconds(12345678));
+                System.out.println(ldl.plusSeconds(123456789));
+		        	fine piccolo test */
+                
+		        	TransformerFactory transformerFactory = TransformerFactory.newInstance();
+		         Transformer transformer = transformerFactory.newTransformer();
+		         DOMSource source = new DOMSource(doc);
+		         StreamResult result = new StreamResult(new File ("C:\\Users\\Piergiulio\\eclipse-workspace-CorsoJava\\XmlPractice\\src\\SimonSays.xml"));
+		         transformer.transform(source,result);
+		         
+		         StreamResult consoleResult = new StreamResult(System.out);
+		         transformer.transform(source, consoleResult);
+		         
+		  } catch (Exception e) {
+		         e.printStackTrace();
+       }
+    }
+}

@@ -1,0 +1,156 @@
+import java.io.File;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
+import javax.xml.parsers.DocumentBuilder;
+import org.w3c.dom.Document;
+import org.w3c.dom.NodeList;
+import java.time.*;
+import java.time.format.DateTimeFormatter;
+
+public class DomParser {
+	   
+	public static void main(String[] args) { 
+		   
+		/*ok. ho provato a fare il tutto con il minor numero di variabili possibili
+		cercando di mantenere alta la readability
+		potevo fare il tutto senza dichiarare la stringa dateTimeString, chiamando il contenuto
+	    direttamente dai nodi, però cosi credo sia più facile controllare lo stato
+		dei vari loop nel caso si volessero fare dele modifiche
+		Stesso discorso per il counter che stà la solo a scopo illustrativo*/
+	       
+		String dateTimeString = "";
+		   ZonedDateTime ldl = null;
+	       DateTimeFormatter myF= DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSX");
+           int counter=0;
+		   try {
+		    	  
+		        File inputFile = new File("C:\\Users\\Piergiulio\\eclipse-workspace-CorsoJava\\XmlPractice\\src\\NewFile.xml");
+		         
+		        DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+		        DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+		        Document doc = dBuilder.parse(inputFile);
+		        /* ho scelto questo approccio per dare un pò di brio alla faccenda.
+		         * se avessi dovuto metterci il minor tempo possibile,
+		         * probabilmente avrei mantenuto il codice di prima.
+		         * Ovvero, avrei dichiarato, a partire dal doc
+		         *  solamente una Nodelist con tutte le istanze
+		         * degli EventDateTime, e poi avrei costruito vari loop con l'indice i
+		         * impostato manualmente per trovare le corrispondenze con i vari tag
+		         * */
+		        
+		        NodeList aggE= doc.getElementsByTagName("snx:AggregationEvent");
+		        NodeList comE= doc.getElementsByTagName("snx:CommissionEvent");
+
+		        NodeList aggEdt1= aggE.item(0).getChildNodes();
+		        NodeList aggEdt2= aggE.item(1).getChildNodes();
+		        NodeList comEdt1= comE.item(0).getChildNodes();
+		        NodeList comEdt2= comE.item(1).getChildNodes();
+		        NodeList comEdt3= comE.item(2).getChildNodes();
+                
+		        /* Qui si spiega abbastanza da solo. Non ho trovato alternative per individuare
+		         * i singoli tag degli EventDateTime a partire dalle NodeList 
+		         * (con un Document si può facilmente, con una NodeList per ora non ci riesco).
+		         * Ho però sfruttato il fatto che gli EventDateTime sono sempre i primi Child
+		         * per poterci lavorare. La fregatura è che le NodeList sono più pesanti
+		         * di quanto servirebbe, dato che invece di contenere solamente i tag di cui
+		         * ho bisogno, contengono tutti i tag presenti. Per brevità, non sono andato oltre.
+		         * Comunque. In questo modo ho potuto dire ai loop da dove iniziare a computare.
+		         * */
+		        
+		        /* Ora inizia il blocco di cinque loop che servono a cercare gli EventDateTime.
+                 * Partendo dagli Aggregation, per poi tornare a inizio file con i Commission.
+                 * Siccome stavolta non ho dovuto resettare il conteggio per ogni istanza 
+                 * di EventDateTime diversa dalla precedente, ho eliminato i vari if/else relativi
+                 * all'individuazione di questi. 
+                 * Ne ho però dovuti fare di altri, dato che per ogni CommissionEvent, alla fine
+                 * della propria lista, ha il tag CommissionCommonAttributes, il quale
+                 * non ha EventDateTime. 
+                 * Per risolvere, appunto, ho usato un if che fà partire il blocco 
+                 * solo se il tag del primo ChildNode è uguale al tag che mi interessa. 
+                 * */
+		        
+		        
+		        dateTimeString= aggEdt1.item(0).getFirstChild().getTextContent();
+                for (int i=0;i<aggEdt1.getLength();i++) {
+			    ldl= ZonedDateTime.parse(dateTimeString, myF);        		  	
+		        ldl= ldl.minusSeconds(1);
+		        aggEdt1.item(i).getFirstChild().setTextContent(ldl.toString());
+		        dateTimeString= aggEdt1.item(i).getFirstChild().getTextContent();
+		        counter++;
+	       System.out.println(counter + " : " + aggEdt1.item(i).getFirstChild().getTextContent()); 	
+		        }
+		        /* Il codice funziona in questo modo:
+		         * fuori dal primo loop, salvo la prima istanza dell'EventDateTime 
+		         * a partire dal quale voglio iniziare a lavorare.
+		         * 
+		         * All'interno del loop, 
+		         * PRIMA avviene lo scalaggio (lol),
+		         * basato sulla stringa salvata in precedenza, e
+		         * POI salvo la nuova stringa modificata.
+		         * Il loop lavora sulla stringa dell'item(i) precedente,
+		         * salvando la stringa modificata sull'item(i) attuale, e via cosi. 
+		         * */
+                for (int i=0;i<aggEdt2.getLength();i++) {
+			    ldl= ZonedDateTime.parse(dateTimeString, myF);        		  	
+		        ldl= ldl.minusSeconds(1);
+		        aggEdt2.item(i).getFirstChild().setTextContent(ldl.toString());
+		        dateTimeString= aggEdt2.item(i).getFirstChild().getTextContent();
+		        counter++;
+	       System.out.println(counter + " : " + aggEdt2.item(i).getFirstChild().getTextContent()); 	
+		        }
+		    
+                for (int i=0;i<comEdt1.getLength();i++) {
+    			    if(comEdt1.item(i).getNodeName()=="snx:CommissionEventDetail"){
+                	//Questo è il primo dei tre if che mi servono ad evitare 
+    			    //	i CommonAttributes.
+    			    	
+                	ldl= ZonedDateTime.parse(dateTimeString, myF);        		  	
+    		        ldl= ldl.minusSeconds(1);
+    		        comEdt1.item(i).getFirstChild().setTextContent(ldl.toString());
+    		        dateTimeString= comEdt1.item(i).getFirstChild().getTextContent();
+    		        counter++;
+    	       System.out.println(counter + " : " + comEdt1.item(i).getFirstChild().getTextContent()); 	
+    			    } }	
+                
+                    for (int i=0;i<comEdt2.getLength();i++) {
+    			    if(comEdt2.item(i).getNodeName()=="snx:CommissionEventDetail"){
+
+                	
+    			    ldl= ZonedDateTime.parse(dateTimeString, myF);        		  	
+    		        ldl= ldl.minusSeconds(1);
+    		        comEdt2.item(i).getFirstChild().setTextContent(ldl.toString());
+    		        dateTimeString= comEdt2.item(i).getFirstChild().getTextContent();
+    		        counter++;
+    	       System.out.println(counter + " : " + comEdt2.item(i).getFirstChild().getTextContent()); 	
+    		        }}
+		        		
+                for (int i=0;i<comEdt3.getLength();i++) {
+    			    if(comEdt3.item(i).getNodeName()=="snx:CommissionEventDetail") {
+    			    ldl= ZonedDateTime.parse(dateTimeString, myF);        		  	
+    		        ldl= ldl.minusSeconds(1);
+    		        comEdt3.item(i).getFirstChild().setTextContent(ldl.toString());
+    		        dateTimeString= comEdt3.item(i).getFirstChild().getTextContent();
+    		        counter++;
+    	       System.out.println(counter + " : " + comEdt3.item(i).getFirstChild().getTextContent()); 	
+    		        }
+    			  }	
+		        		
+                // Trasformo e salvo. E ba.
+        	
+		        TransformerFactory transformerFactory = TransformerFactory.newInstance();
+		         Transformer transformer = transformerFactory.newTransformer();
+		         DOMSource source = new DOMSource(doc);
+		         StreamResult result = new StreamResult(new File ("C:\\Users\\Piergiulio\\eclipse-workspace-CorsoJava\\XmlPractice\\src\\SimonSays.xml"));
+		         transformer.transform(source,result);
+		         
+		         StreamResult consoleResult = new StreamResult(System.out);
+		         transformer.transform(source, consoleResult);
+		         
+		  } catch (Exception e) {
+		         e.printStackTrace();
+       }
+    }
+}
